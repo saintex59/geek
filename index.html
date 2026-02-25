@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Radar Aérien – Vendée</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #00ff88;
+    --cyan: #00d4ff;
+    --orange: #ff6b00;
+    --bg: #020c14;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--green);
+    font-family: 'Rajdhani', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* HEADER */
+  header {
+    height: 58px;
+    background: rgba(0,8,16,0.98);
+    border-bottom: 1px solid rgba(0,255,136,0.25);
+    display: flex;
+    align-items: center;
+    padding: 0 18px;
+    gap: 16px;
+    flex-shrink: 0;
+    z-index: 100;
+  }
+  .radar-anim {
+    width: 38px; height: 38px;
+    border: 2px solid var(--green);
+    border-radius: 50%;
+    position: relative;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .radar-anim::after {
+    content:'';
+    position:absolute; inset:0;
+    background: conic-gradient(from 0deg, rgba(0,255,136,0) 60%, rgba(0,255,136,0.6) 100%);
+    animation: spin 3s linear infinite;
+    border-radius:50%;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .title-block h1 {
+    font-family:'Orbitron',monospace;
+    font-size:1.1rem; font-weight:900;
+    letter-spacing:0.18em;
+    text-shadow:0 0 16px var(--green);
+    line-height:1;
+  }
+  .title-block h1 span { color:var(--cyan); }
+  .title-block p {
+    font-size:0.62rem;
+    color:rgba(0,255,136,0.4);
+    letter-spacing:0.22em;
+    text-transform:uppercase;
+    margin-top:2px;
+  }
+  .header-right {
+    margin-left:auto;
+    display:flex; align-items:center; gap:10px;
+  }
+  .pill {
+    border:1px solid rgba(0,255,136,0.2);
+    background:rgba(0,255,136,0.04);
+    border-radius:20px;
+    padding:4px 12px;
+    font-size:0.7rem;
+    letter-spacing:0.12em;
+    color:rgba(0,255,136,0.6);
+    display:flex; align-items:center; gap:6px;
+  }
+  .pill.live { border-color:rgba(0,212,255,0.3); color:var(--cyan); }
+  .dot {
+    width:7px; height:7px;
+    border-radius:50%;
+    background:var(--green);
+    box-shadow:0 0 8px var(--green);
+    animation:pulse 1.5s ease-in-out infinite;
+  }
+  .dot.blue { background:var(--cyan); box-shadow:0 0 8px var(--cyan); }
+  @keyframes pulse { 0%,100%{opacity:1;}50%{opacity:0.3;} }
+
+  /* MAIN */
+  main {
+    flex:1;
+    display:flex;
+    overflow:hidden;
+    position:relative;
+  }
+
+  /* IFRAME */
+  #fr24-wrapper {
+    flex:1;
+    position:relative;
+    background:#020c14;
+  }
+  #fr24-wrapper iframe {
+    width:100%; height:100%;
+    border:none; display:block;
+  }
+  .overlay-top {
+    position:absolute; top:0; left:0; right:0; height:50px;
+    background:linear-gradient(180deg,rgba(2,12,20,0.9) 0%,transparent 100%);
+    pointer-events:none; z-index:10;
+  }
+  .zone-badge {
+    position:absolute; top:12px; left:12px; z-index:20;
+    background:rgba(2,12,20,0.88);
+    border:1px solid rgba(0,255,136,0.3);
+    border-radius:6px; padding:5px 11px;
+    font-family:'Orbitron',monospace;
+    font-size:0.63rem; letter-spacing:0.2em;
+    color:var(--green); text-shadow:0 0 8px var(--green);
+    backdrop-filter:blur(8px); pointer-events:none;
+  }
+  .zone-badge .coords {
+    font-size:0.53rem; color:rgba(0,255,136,0.4);
+    margin-top:2px; letter-spacing:0.1em;
+  }
+
+  /* MESSAGE BLOCAGE */
+  #blocked-msg {
+    display:none;
+    position:absolute; inset:0;
+    background:rgba(2,12,20,0.97);
+    z-index:50;
+    flex-direction:column;
+    align-items:center; justify-content:center;
+    gap:14px; text-align:center; padding:40px;
+  }
+  #blocked-msg.show { display:flex; }
+  #blocked-msg .icon { font-size:2.8rem; }
+  #blocked-msg h2 {
+    font-family:'Orbitron',monospace;
+    font-size:0.95rem; letter-spacing:0.2em; color:var(--orange);
+  }
+  #blocked-msg p {
+    font-size:0.83rem; color:rgba(0,255,136,0.6);
+    max-width:520px; line-height:1.7;
+  }
+  .btn-link {
+    display:inline-block; margin-top:6px;
+    padding:10px 22px;
+    border:1px solid var(--cyan); color:var(--cyan);
+    font-family:'Orbitron',monospace; font-size:0.72rem;
+    letter-spacing:0.15em; text-decoration:none;
+    border-radius:4px; transition:all 0.2s;
+  }
+  .btn-link:hover { background:rgba(0,212,255,0.1); box-shadow:0 0 15px rgba(0,212,255,0.3); }
+  .btn-link.alt { border-color:var(--green); color:var(--green); }
+  .btn-link.alt:hover { background:rgba(0,255,136,0.08); box-shadow:0 0 15px rgba(0,255,136,0.3); }
+
+  /* PANNEAU LATÉRAL */
+  #side {
+    width:0; overflow:hidden;
+    transition:width 0.3s ease;
+    background:rgba(2,12,22,0.97);
+    border-left:1px solid rgba(0,255,136,0.15);
+    display:flex; flex-direction:column;
+  }
+  #side.open { width:290px; }
+  .side-header {
+    padding:13px 15px 9px;
+    border-bottom:1px solid rgba(0,255,136,0.1);
+    font-family:'Orbitron',monospace;
+    font-size:0.68rem; letter-spacing:0.2em; color:var(--cyan);
+  }
+  .info-block { padding:12px 15px; border-bottom:1px solid rgba(0,255,136,0.07); }
+  .info-block h3 {
+    font-family:'Orbitron',monospace; font-size:0.6rem;
+    letter-spacing:0.2em; color:rgba(0,255,136,0.35);
+    margin-bottom:9px; text-transform:uppercase;
+  }
+  .info-row {
+    display:flex; justify-content:space-between;
+    font-size:0.78rem; padding:3px 0; color:rgba(255,255,255,0.7);
+  }
+  .info-row .k { color:rgba(0,255,136,0.4); font-size:0.7rem; }
+  .info-row .v { font-weight:600; color:#fff; }
+  .airport-item {
+    display:flex; align-items:center; gap:9px;
+    padding:6px 0; border-bottom:1px solid rgba(0,255,136,0.05);
+  }
+  .airport-iata {
+    font-family:'Orbitron',monospace; font-size:0.88rem;
+    font-weight:700; color:var(--cyan); width:38px;
+  }
+  .airport-info .name { font-size:0.78rem; color:#fff; font-weight:600; }
+  .airport-info .city { font-size:0.65rem; color:rgba(0,255,136,0.35); }
+  .airport-dist { font-size:0.65rem; color:rgba(0,255,136,0.35); margin-left:auto; }
+
+  #toggle-side {
+    position:absolute; right:0; top:50%;
+    transform:translateY(-50%);
+    z-index:30;
+    background:rgba(2,12,20,0.92);
+    border:1px solid rgba(0,255,136,0.25);
+    border-right:none; color:var(--green);
+    padding:10px 6px; cursor:pointer;
+    border-radius:6px 0 0 6px;
+    writing-mode:vertical-rl;
+    font-family:'Orbitron',monospace; font-size:0.58rem;
+    letter-spacing:0.1em; transition:all 0.2s;
+  }
+  #toggle-side:hover { background:rgba(0,255,136,0.08); border-color:var(--green); }
+
+  /* FOOTER */
+  footer {
+    height:30px;
+    background:rgba(0,5,12,0.98);
+    border-top:1px solid rgba(0,255,136,0.1);
+    display:flex; align-items:center;
+    padding:0 16px; gap:16px;
+    font-size:0.63rem; letter-spacing:0.1em;
+    color:rgba(0,255,136,0.28); flex-shrink:0;
+  }
+  footer a { color:rgba(0,212,255,0.45); text-decoration:none; }
+  footer a:hover { color:var(--cyan); }
+  .sep { color:rgba(0,255,136,0.1); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="radar-anim"></div>
+  <div class="title-block">
+    <h1>VENDÉE <span>AIR</span> RADAR</h1>
+    <p>Trafic aérien en temps réel · Département 85</p>
+  </div>
+  <div class="header-right">
+    <div class="pill live"><div class="dot blue"></div>FlightRadar24 Live</div>
+    <div class="pill"><div class="dot"></div>Zone Vendée</div>
+    <div class="pill">46.67°N · 1.43°O</div>
+  </div>
+</header>
+
+<main>
+  <div id="fr24-wrapper">
+
+    <!-- Iframe FR24 — centrée Vendée, zoom 9, mode simple -->
+    <iframe
+      id="fr24-frame"
+      src="https://www.flightradar24.com/simple?lat=46.67&lon=-1.43&z=9"
+      title="FlightRadar24 – Vendée"
+      allowfullscreen
+      loading="lazy"
+    ></iframe>
+
+    <div class="overlay-top"></div>
+    <div class="zone-badge">
+      ▸ VENDÉE · ZONE 85
+      <div class="coords">46.2–47.1°N · 2.2–0.5°O</div>
+    </div>
+
+    <!-- Affiché si FR24 bloque l'iframe -->
+    <div id="blocked-msg">
+      <div class="icon">⚠️</div>
+      <h2>INTÉGRATION BLOQUÉE PAR FLIGHTRADAR24</h2>
+      <p>
+        FlightRadar24 applique une politique <strong style="color:#fff">X-Frame-Options</strong> qui empêche
+        l'affichage de leur carte dans une page externe. C'est une restriction côté serveur,
+        impossible à contourner sans accord commercial avec eux.
+      </p>
+      <p style="color:rgba(0,212,255,0.8); margin-top:4px;">
+        Cliquez sur un des liens ci-dessous pour accéder à la vraie carte, centrée sur la Vendée :
+      </p>
+      <a class="btn-link" href="https://www.flightradar24.com/#46.67,-1.43,9" target="_blank">
+        ✈ &nbsp;Ouvrir FlightRadar24 · Vendée
+      </a>
+      <a class="btn-link alt" href="https://globe.adsbexchange.com/?lat=46.67&lon=-1.43&zoom=9" target="_blank">
+        🛩 &nbsp;ADS-B Exchange · Alternative gratuite
+      </a>
+    </div>
+
+    <button id="toggle-side" onclick="toggleSide()">INFO</button>
+  </div>
+
+  <!-- PANNEAU INFO -->
+  <div id="side">
+    <div class="side-header">INFOS · VENDÉE</div>
+    <div class="info-block">
+      <h3>Zone de couverture</h3>
+      <div class="info-row"><span class="k">Département</span><span class="v">Vendée (85)</span></div>
+      <div class="info-row"><span class="k">Région</span><span class="v">Pays de la Loire</span></div>
+      <div class="info-row"><span class="k">Centre</span><span class="v">46.67°N, 1.43°O</span></div>
+      <div class="info-row"><span class="k">Rayon</span><span class="v">~70 km</span></div>
+    </div>
+    <div class="info-block">
+      <h3>Aéroports proches</h3>
+      <div class="airport-item">
+        <div class="airport-iata">NTE</div>
+        <div class="airport-info">
+          <div class="name">Nantes Atlantique</div>
+          <div class="city">Nantes · 44</div>
+        </div>
+        <div class="airport-dist">~65 km</div>
+      </div>
+      <div class="airport-item">
+        <div class="airport-iata">LRH</div>
+        <div class="airport-info">
+          <div class="name">La Rochelle – Île de Ré</div>
+          <div class="city">La Rochelle · 17</div>
+        </div>
+        <div class="airport-dist">~55 km</div>
+      </div>
+      <div class="airport-item">
+        <div class="airport-iata">BOD</div>
+        <div class="airport-info">
+          <div class="name">Bordeaux-Mérignac</div>
+          <div class="city">Bordeaux · 33</div>
+        </div>
+        <div class="airport-dist">~160 km</div>
+      </div>
+      <div class="airport-item">
+        <div class="airport-iata">RNS</div>
+        <div class="airport-info">
+          <div class="name">Rennes Saint-Jacques</div>
+          <div class="city">Rennes · 35</div>
+        </div>
+        <div class="airport-dist">~155 km</div>
+      </div>
+    </div>
+    <div class="info-block">
+      <h3>Source des données</h3>
+      <div class="info-row"><span class="k">Fournisseur</span><span class="v">FlightRadar24</span></div>
+      <div class="info-row"><span class="k">Technologie</span><span class="v">ADS-B / MLAT</span></div>
+      <div class="info-row"><span class="k">Rafraîchissement</span><span class="v">~5 sec</span></div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <span>VENDÉE AIR RADAR</span>
+  <span class="sep">|</span>
+  <span>Données : <a href="https://www.flightradar24.com" target="_blank">FlightRadar24</a></span>
+  <span class="sep">|</span>
+  <span>Alternative : <a href="https://globe.adsbexchange.com/?lat=46.67&lon=-1.43&zoom=9" target="_blank">ADS-B Exchange</a></span>
+  <span style="margin-left:auto; color:rgba(0,255,136,0.15);">saintex59/geek · GitHub Pages</span>
+</footer>
+
+<script>
+  function toggleSide() {
+    document.getElementById('side').classList.toggle('open');
+  }
+
+  // Détecter si l'iframe est bloquée
+  const frame = document.getElementById('fr24-frame');
+  let loaded = false;
+
+  frame.addEventListener('load', () => {
+    loaded = true;
+    try {
+      // Si on peut accéder au document → contenu vide = bloqué
+      const doc = frame.contentDocument || frame.contentWindow?.document;
+      if (!doc || !doc.body || doc.body.innerHTML.trim() === '') {
+        document.getElementById('blocked-msg').classList.add('show');
+      }
+    } catch(e) {
+      // Cross-origin exception = iframe a bien chargé FR24
+    }
+  });
+
+  // Si pas chargé après 8s → message bloquage
+  setTimeout(() => {
+    if (!loaded) document.getElementById('blocked-msg').classList.add('show');
+  }, 8000);
+</script>
+</body>
+</html>
