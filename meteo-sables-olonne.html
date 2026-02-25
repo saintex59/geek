@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Météo Les Sables-d'Olonne</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ocean: #0a2a4a;
+    --deep: #071828;
+    --wave: #0e5c8a;
+    --foam: #b8e0f7;
+    --sky: #87ceeb;
+    --sand: #e8d5a3;
+    --accent: #00d4ff;
+    --danger: #ff6b35;
+    --text: #e8f4fd;
+    --muted: #7aaec8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--deep);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Animated ocean background */
+  body::before {
+    content: '';
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 40%;
+    background: linear-gradient(180deg, transparent 0%, rgba(10,42,74,0.6) 40%, var(--ocean) 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .waves {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 120px;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .wave {
+    position: absolute;
+    bottom: 0;
+    width: 200%;
+    height: 80px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 80'%3E%3Cpath fill='%230e5c8a' fill-opacity='0.4' d='M0,40 C360,80 720,0 1080,40 C1260,60 1380,20 1440,40 L1440,80 L0,80 Z'/%3E%3C/svg%3E") repeat-x bottom;
+    background-size: 720px 80px;
+    animation: wave 8s linear infinite;
+  }
+  .wave:nth-child(2) {
+    background-color: transparent;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 80'%3E%3Cpath fill='%230a2a4a' fill-opacity='0.6' d='M0,60 C240,20 480,80 720,50 C960,20 1200,70 1440,40 L1440,80 L0,80 Z'/%3E%3C/svg%3E");
+    animation: wave 12s linear infinite reverse;
+    opacity: 0.7;
+  }
+  @keyframes wave {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px 16px 140px;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .city-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(38px, 8vw, 64px);
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-shadow: 0 0 40px rgba(0,212,255,0.3);
+    line-height: 1;
+  }
+  .city-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .update-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: right;
+  }
+  .update-time span {
+    color: var(--accent);
+  }
+
+  /* Main temp card */
+  .main-card {
+    background: linear-gradient(135deg, rgba(14,92,138,0.3) 0%, rgba(10,42,74,0.5) 100%);
+    border: 1px solid rgba(0,212,255,0.15);
+    border-radius: 20px;
+    padding: 28px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+  }
+  .main-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(0,212,255,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .main-temp {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(72px, 15vw, 110px);
+    line-height: 1;
+    color: var(--text);
+  }
+  .main-temp sup {
+    font-size: 0.35em;
+    vertical-align: super;
+    color: var(--muted);
+  }
+  .main-info {
+    flex: 1;
+  }
+  .weather-desc {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--foam);
+    margin-bottom: 8px;
+  }
+  .feels-like {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .humidity-main {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--sky);
+  }
+  .weather-icon {
+    font-size: 56px;
+    filter: drop-shadow(0 0 20px rgba(0,212,255,0.4));
+  }
+
+  /* Grid cards */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  @media (min-width: 600px) {
+    .grid { grid-template-columns: 1fr 1fr 1fr; }
+  }
+
+  .card {
+    background: rgba(10,42,74,0.5);
+    border: 1px solid rgba(0,212,255,0.1);
+    border-radius: 16px;
+    padding: 18px 16px;
+    backdrop-filter: blur(8px);
+    transition: border-color 0.3s, transform 0.2s;
+  }
+  .card:hover {
+    border-color: rgba(0,212,255,0.3);
+    transform: translateY(-2px);
+  }
+  .card-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .card-label .dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: inline-block;
+  }
+  .card-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 38px;
+    line-height: 1;
+    color: var(--text);
+  }
+  .card-unit {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .card-sub {
+    font-size: 12px;
+    color: var(--foam);
+    margin-top: 6px;
+  }
+
+  /* Wind card special */
+  .wind-dir {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    margin-top: 4px;
+  }
+  .compass {
+    width: 28px; height: 28px;
+    border: 1.5px solid rgba(0,212,255,0.4);
+    border-radius: 50%;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .arrow {
+    font-size: 12px;
+    transition: transform 1s ease;
+    transform-origin: center;
+  }
+
+  /* Cloud card */
+  .cloud-badge {
+    display: inline-block;
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.25);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    margin-top: 6px;
+  }
+
+  /* Tides section */
+  .tides-section {
+    background: rgba(10,42,74,0.5);
+    border: 1px solid rgba(0,212,255,0.1);
+    border-radius: 20px;
+    padding: 24px;
+    backdrop-filter: blur(8px);
+  }
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .tides-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  @media (min-width: 500px) {
+    .tides-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+  .tide-item {
+    text-align: center;
+    padding: 14px 10px;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+  .tide-item.high {
+    background: linear-gradient(180deg, rgba(0,212,255,0.12) 0%, rgba(0,212,255,0.04) 100%);
+    border: 1px solid rgba(0,212,255,0.25);
+  }
+  .tide-item.low {
+    background: linear-gradient(180deg, rgba(184,224,247,0.06) 0%, transparent 100%);
+    border: 1px solid rgba(184,224,247,0.12);
+  }
+  .tide-type {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .tide-time {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    line-height: 1;
+    color: var(--text);
+  }
+  .tide-height {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    margin-top: 4px;
+  }
+  .tide-item.high .tide-height { color: var(--accent); }
+  .tide-item.low .tide-height { color: var(--muted); }
+
+  /* Tide progress */
+  .tide-progress-wrap {
+    margin-top: 18px;
+  }
+  .tide-progress-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .tide-bar {
+    height: 6px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .tide-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--wave), var(--accent));
+    border-radius: 10px;
+    transition: width 1.5s ease;
+  }
+
+  /* Loading */
+  .loading {
+    text-align: center;
+    padding: 60px 20px;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    font-size: 13px;
+    letter-spacing: 2px;
+  }
+  .loading::after {
+    content: '';
+    display: block;
+    width: 40px; height: 40px;
+    border: 2px solid rgba(0,212,255,0.2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    margin: 20px auto 0;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-msg {
+    background: rgba(255,107,53,0.1);
+    border: 1px solid rgba(255,107,53,0.3);
+    border-radius: 12px;
+    padding: 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--danger);
+    text-align: center;
+  }
+
+  /* Beaufort bar */
+  .bft-bar {
+    display: flex;
+    gap: 2px;
+    margin-top: 6px;
+  }
+  .bft-seg {
+    flex: 1;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.07);
+  }
+  .bft-seg.active { background: var(--accent); }
+  .bft-seg.warn { background: var(--danger); }
+
+  /* Responsive */
+  @media (max-width: 400px) {
+    .main-card { flex-direction: column; text-align: center; }
+    .grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="waves">
+  <div class="wave"></div>
+  <div class="wave"></div>
+</div>
+
+<div class="container">
+  <div class="header">
+    <div>
+      <div class="city-sub">● Météo Marine</div>
+      <div class="city-name">Les Sables-d'Olonne</div>
+    </div>
+    <div class="update-time" id="updateTime">Chargement…</div>
+  </div>
+
+  <div id="appContent">
+    <div class="loading">CHARGEMENT DES DONNÉES</div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────
+const LAT = 46.4965;
+const LON = -1.7832;
+const OWM_KEY = 'DEMO'; // remplacer par votre clé API OpenWeatherMap
+
+// ── DATA FETCH ──────────────────────────────────────────────────────────
+async function fetchWeather() {
+  // Utilisation de l'API Open-Meteo (gratuite, sans clé)
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,cloud_cover,wind_speed_10m,wind_gusts_10m,wind_direction_10m&hourly=cloud_cover_low,cloud_cover_mid,cloud_cover_high,visibility&forecast_days=1&wind_speed_unit=kn&timezone=Europe%2FParis`;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('Météo indisponible');
+  return r.json();
+}
+
+async function fetchTides() {
+  // API WorldTides (alternative: utiliser des données statiques calculées)
+  // Pour démo, on utilise des horaires calculés typiques pour Les Sables
+  // En production: https://www.worldtides.info/api ou https://maree.info API
+  return computeDemoTides();
+}
+
+function computeDemoTides() {
+  // Calcul approximatif des marées basé sur le cycle lunaire
+  // Les Sables-d'Olonne : marnage ~4.5m (vive-eau), coefficient moyen
+  const now = new Date();
+  const lunation = 29.530588861;
+  const knownNewMoon = new Date('2000-01-06T18:14:00Z');
+  const daysSince = (now - knownNewMoon) / 86400000;
+  const phase = (daysSince % lunation) / lunation;
+  const coeff = Math.round(50 + 45 * Math.abs(Math.cos(phase * 2 * Math.PI)));
+
+  // Période de marée ~12h25min
+  const tidePeriod = 12 * 3600 + 25 * 60;
+  const baseTime = now.setHours(0,0,0,0);
+  const ts = Date.now();
+
+  // Deux pleines mers et deux basses mers par jour
+  // Offset de phase approximatif
+  const offset = (daysSince % 1) * tidePeriod;
+  const tides = [];
+  
+  // Marnage selon coefficient
+  const haut = 1.5 + (coeff / 100) * 3.8;
+  const bas = haut - (coeff / 100) * 4.5;
+
+  for (let i = 0; i < 4; i++) {
+    const t = new Date(now);
+    t.setHours(0,0,0,0);
+    const addSec = (i * tidePeriod / 2 + offset * 0.5) % 86400;
+    t.setSeconds(addSec);
+    tides.push({
+      time: t,
+      type: i % 2 === 0 ? 'PM' : 'BM',
+      height: i % 2 === 0 ? haut : bas,
+      coeff: coeff
+    });
+  }
+  tides.sort((a,b) => a.time - b.time);
+  return { tides, coeff };
+}
+
+// ── WMO CODE → Description + Emoji ─────────────────────────────────────
+function wmoToDesc(code) {
+  const m = {
+    0: ['Ciel dégagé','☀️'], 1: ['Peu nuageux','🌤️'], 2: ['Partiellement nuageux','⛅'],
+    3: ['Couvert','☁️'], 45: ['Brouillard','🌫️'], 48: ['Brouillard givrant','🌫️'],
+    51: ['Bruine légère','🌦️'], 53: ['Bruine','🌦️'], 55: ['Bruine forte','🌦️'],
+    61: ['Pluie légère','🌧️'], 63: ['Pluie','🌧️'], 65: ['Pluie forte','🌧️'],
+    71: ['Neige légère','🌨️'], 73: ['Neige','❄️'], 75: ['Neige forte','❄️'],
+    80: ['Averses légères','🌦️'], 81: ['Averses','🌧️'], 82: ['Averses fortes','⛈️'],
+    95: ['Orage','⛈️'], 96: ['Orage avec grêle','⛈️'], 99: ['Orage violent','⛈️'],
+  };
+  return m[code] || ['Inconnu','🌡️'];
+}
+
+function cloudType(low, mid, high, cover) {
+  if (cover < 15) return 'Ciel dégagé';
+  if (low > 60) return 'Stratus / Nimbostratus';
+  if (low > 30) return 'Cumulus bas';
+  if (mid > 50) return 'Altocumulus';
+  if (mid > 20) return 'Altostratus';
+  if (high > 50) return 'Cirrostratus';
+  if (high > 20) return 'Cirrus';
+  return 'Cumulus';
+}
+
+function cloudCeiling(low, mid, high, vis) {
+  // Estimation plafond en pieds (approximatif)
+  if (low > 30) return { ft: Math.round(2000 - low * 12), label: 'Bas' };
+  if (mid > 30) return { ft: Math.round(8000 - mid * 30), label: 'Moyen' };
+  if (high > 30) return { ft: 18000, label: 'Haut' };
+  return { ft: 99999, label: 'CAVOK' };
+}
+
+function beaufortScale(knots) {
+  if (knots < 1) return 0;
+  if (knots < 4) return 1;
+  if (knots < 7) return 2;
+  if (knots < 11) return 3;
+  if (knots < 17) return 4;
+  if (knots < 22) return 5;
+  if (knots < 28) return 6;
+  if (knots < 34) return 7;
+  if (knots < 41) return 8;
+  if (knots < 48) return 9;
+  if (knots < 56) return 10;
+  if (knots < 64) return 11;
+  return 12;
+}
+
+function windDirLabel(deg) {
+  const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSO','SO','OSO','O','ONO','NO','NNO'];
+  return dirs[Math.round(deg / 22.5) % 16];
+}
+
+function fmt(date) {
+  return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────
+function render(wx, tideData) {
+  const c = wx.current;
+  const h = wx.hourly;
+  const [desc, emoji] = wmoToDesc(c.weather_code);
+  const bft = beaufortScale(c.wind_speed_10m);
+  const bftGusts = beaufortScale(c.wind_gusts_10m);
+  const lowCld = h.cloud_cover_low[0] ?? 0;
+  const midCld = h.cloud_cover_mid[0] ?? 0;
+  const hiCld = h.cloud_cover_high[0] ?? 0;
+  const cloudT = cloudType(lowCld, midCld, hiCld, c.cloud_cover);
+  const ceiling = cloudCeiling(lowCld, midCld, hiCld);
+  const windDir = windDirLabel(c.wind_direction_10m);
+
+  const now = new Date();
+  document.getElementById('updateTime').innerHTML =
+    `MÀJ <span>${fmt(now)}</span>`;
+
+  // Tides: find current state
+  const { tides, coeff } = tideData;
+  const next = tides.find(t => t.time > now);
+  let tideProgress = 50;
+  if (next) {
+    const prev = tides[tides.indexOf(next) - 1];
+    if (prev) {
+      const elapsed = now - prev.time;
+      const total = next.time - prev.time;
+      tideProgress = Math.round((elapsed / total) * 100);
+    }
+  }
+  const isMontante = next && next.type === 'PM';
+
+  const bftSegs = Array.from({length:12}, (_,i) => {
+    const active = i < bft;
+    const warn = active && bft >= 7;
+    return `<div class="bft-seg ${active ? (warn ? 'warn' : 'active') : ''}"></div>`;
+  }).join('');
+
+  const bftSegsGust = Array.from({length:12}, (_,i) => {
+    const active = i < bftGusts;
+    const warn = active && bftGusts >= 7;
+    return `<div class="bft-seg ${active ? (warn ? 'warn' : 'active') : ''}"></div>`;
+  }).join('');
+
+  const ceilLabel = ceiling.ft >= 99999 ? 'CAVOK' : ceiling.ft >= 5000 ? `${(ceiling.ft/1000).toFixed(0)}k ft` : `${ceiling.ft} ft`;
+
+  let tidesHTML = tides.map(t => `
+    <div class="tide-item ${t.type==='PM'?'high':'low'}">
+      <div class="tide-type">${t.type==='PM'?'🔼 Pleine mer':'🔽 Basse mer'}</div>
+      <div class="tide-time">${fmt(t.time)}</div>
+      <div class="tide-height">${t.height.toFixed(2)} m</div>
+    </div>
+  `).join('');
+
+  document.getElementById('appContent').innerHTML = `
+    <div class="main-card">
+      <div class="main-temp">${Math.round(c.temperature_2m)}<sup>°C</sup></div>
+      <div class="main-info">
+        <div class="weather-desc">${desc}</div>
+        <div class="feels-like">Ressenti ${Math.round(c.apparent_temperature)}°C</div>
+        <div class="humidity-main">💧 Humidité ${c.relative_humidity_2m}%</div>
+      </div>
+      <div class="weather-icon">${emoji}</div>
+    </div>
+
+    <div class="grid">
+      <!-- VENT ÉTABLI -->
+      <div class="card">
+        <div class="card-label"><span class="dot"></span>Vent établi</div>
+        <div class="card-value">${Math.round(c.wind_speed_10m)}</div>
+        <div class="card-unit">nœuds</div>
+        <div class="bft-bar">${bftSegs}</div>
+        <div class="wind-dir">
+          <div class="compass"><span class="arrow" style="transform:rotate(${c.wind_direction_10m}deg)">↑</span></div>
+          ${windDir} — Bf ${bft}
+        </div>
+      </div>
+
+      <!-- RAFALES -->
+      <div class="card">
+        <div class="card-label"><span class="dot"></span>Rafales</div>
+        <div class="card-value" style="color:${bftGusts>=7?'var(--danger)':'var(--text)'}">${Math.round(c.wind_gusts_10m)}</div>
+        <div class="card-unit">nœuds</div>
+        <div class="bft-bar">${bftSegsGust}</div>
+        <div class="card-sub">${Math.round(c.wind_gusts_10m * 1.852)} km/h max</div>
+      </div>
+
+      <!-- HUMIDITÉ -->
+      <div class="card">
+        <div class="card-label"><span class="dot"></span>Humidité</div>
+        <div class="card-value">${c.relative_humidity_2m}</div>
+        <div class="card-unit">%</div>
+        <div class="card-sub" style="margin-top:8px">
+          <div style="height:4px;background:rgba(255,255,255,0.07);border-radius:4px;overflow:hidden">
+            <div style="height:100%;width:${c.relative_humidity_2m}%;background:linear-gradient(90deg,var(--wave),var(--sky));border-radius:4px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NUAGES -->
+      <div class="card">
+        <div class="card-label"><span class="dot"></span>Nuages</div>
+        <div class="card-value">${c.cloud_cover}</div>
+        <div class="card-unit">% couverture</div>
+        <div class="cloud-badge">${cloudT}</div>
+      </div>
+
+      <!-- PLAFOND -->
+      <div class="card">
+        <div class="card-label"><span class="dot"></span>Plafond</div>
+        <div class="card-value" style="font-size:28px;padding-top:4px">${ceilLabel}</div>
+        <div class="card-unit">nuages ${ceiling.label}</div>
+        <div class="card-sub" style="color:var(--muted);font-size:11px;margin-top:6px">
+          ↓ low ${lowCld}% · mid ${midCld}% · hi ${hiCld}%
+        </div>
+      </div>
+
+      <!-- COEFFICIENT -->
+      <div class="card">
+        <div class="card-label"><span class="dot"></span>Marée</div>
+        <div class="card-value" style="color:${coeff>80?'var(--danger)':coeff>60?'var(--sky)':'var(--text)'}">${coeff}</div>
+        <div class="card-unit">coefficient</div>
+        <div class="card-sub">${isMontante?'⬆ Montante':'⬇ Descendante'}</div>
+      </div>
+    </div>
+
+    <!-- MARÉES -->
+    <div class="tides-section">
+      <div class="section-title">
+        <span>🌊</span> Marées du jour
+        <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);font-weight:normal;margin-left:auto">
+          Coeff. <span style="color:var(--accent)">${coeff}</span>
+        </span>
+      </div>
+      <div class="tides-grid">${tidesHTML}</div>
+      <div class="tide-progress-wrap">
+        <div class="tide-progress-label">
+          <span>⬅ ${isMontante?'Basse mer':'Pleine mer'}</span>
+          <span>${isMontante?'→ Montante':'→ Descendante'} · ${tideProgress}%</span>
+          <span>${isMontante?'Pleine mer ➡':'Basse mer ➡'}</span>
+        </div>
+        <div class="tide-bar">
+          <div class="tide-fill" style="width:${tideProgress}%"></div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const [wxData, tideData] = await Promise.all([fetchWeather(), fetchTides()]);
+    render(wxData, tideData);
+  } catch (e) {
+    document.getElementById('appContent').innerHTML =
+      `<div class="error-msg">⚠️ Impossible de charger les données météo.<br>${e.message}<br><br>
+      <small>Vérifiez votre connexion internet. Les données météo proviennent d'Open-Meteo (gratuit, sans clé).</small></div>`;
+    console.error(e);
+  }
+}
+
+init();
+// Rafraîchissement toutes les 10 minutes
+setInterval(init, 10 * 60 * 1000);
+</script>
+</body>
+</html>
